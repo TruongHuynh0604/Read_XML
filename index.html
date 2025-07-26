@@ -1,158 +1,245 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>XML to PNG Converter</title>
+  <meta charset="UTF-8"/>
+  <title>XML to PNG Pro Converter</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
+    :root {
+      --primary: #0206f7;
+      --bg: #f0f2f7;
+      --text: #333;
+      --radius: 8px;
+      --shadow: rgba(0,0,0,0.1) 0px 4px 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #e482e7;
-      margin: 0;
-      padding: 40px;
+      background: var(--bg);
+      color: var(--text);
+      padding-bottom: 40px;
     }
-    .container {
-      max-width: 900px;
-      margin: auto;
-      background: white;
-      border-radius: 8px;
-      padding: 30px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-    }
-    h2 {
+    header {
+      background: linear-gradient(90deg, var(--primary), #2575fc);
+      padding: 20px;
       text-align: center;
-      color: #333;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      box-shadow: var(--shadow);
       margin-bottom: 30px;
     }
-    input[type="file"] {
-      padding: 10px;
-      font-size: 16px;
-      display: block;
-      margin-bottom: 20px;
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      background: white;
+      border-radius: var(--radius);
+      padding: 30px;
+      box-shadow: var(--shadow);
+      display: flex;
+      gap: 30px;
     }
-    button {
-      padding: 12px 24px;
-      background: #007bff;
+    .left { flex: 0 0 350px; }
+    .right { flex: 1; }
+    h2 {
+      color: var(--primary);
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: var(--radius);
+      font-size: 15px;
+    }
+    textarea { resize: vertical; min-height: 120px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      background: linear-gradient(45deg, var(--primary), #2575fc);
       color: white;
       border: none;
-      font-size: 15px;
-      border-radius: 5px;
+      border-radius: var(--radius);
       cursor: pointer;
-      margin-right: 10px;
-      transition: background 0.3s;
+      box-shadow: var(--shadow);
+      transition: transform .1s, box-shadow .1s;
+      font-size: 15px;
     }
-    button:hover {
-      background: #0056b3;
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: rgba(0,0,0,0.2) 0px 6px 16px;
     }
     #previewBox {
-      margin-top: 30px;
       background: white;
-      border-left: 4px solid #007bff;
+      border-left: 4px solid var(--primary);
       padding: 20px;
-      font-family: monospace;
       white-space: pre-wrap;
       line-height: 1.6;
-      border-radius: 4px;
-      overflow-x: auto;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      width: 100%;
     }
     #resultStatus {
-      margin-top: 15px;
-      font-weight: bold;
+      margin-top: 10px;
+      font-weight: 600;
     }
-    #previewImage {
-      margin-top: 20px;
-      border: 1px solid #ccc;
-      display: none;
-      max-width: 100%;
-      border-radius: 4px;
+    footer {
+      text-align: center;
+      padding: 15px 0;
+      color: #666;
+      font-size: 14px;
+      margin-top: 30px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>XML to PNG</h2>
+
+<header>XML → PNG Pro Converter</header>
+
+<div class="container">
+  <div class="left">
+    <h2>Thiết lập & Phân tích</h2>
     <input type="file" id="xmlFile" accept=".xml" />
-    <button onclick="previewXML()">📄 Xem trước</button>
-    <button onclick="captureAsImage()">📷 Tải ảnh PNG</button>
+    <input type="email" id="emailBox" placeholder="Email của bạn" />
+    <button class="btn" onclick="previewXML()">📄 Xem trước XML</button>
+    <button class="btn" onclick="captureAsImage()">📷 Tải ảnh PNG</button>
     <div id="resultStatus"></div>
-    <div id="preview"></div>
-    <img id="previewImage" />
+    <textarea id="xmlAnalysis" readonly placeholder="Phân tích dữ liệu XML..."></textarea>
   </div>
+  <div class="right">
+    <h2>Hiển thị & Preview</h2>
+    <div id="previewBox">
+      Chưa có dữ liệu. Vui lòng chọn file XML và nhấn Xem trước.
+    </div>
+  </div>
+</div>
 
-  <script>
-    let fileName = "output";
+<footer>Developed by Truong Huynh</footer>
 
-    async function previewXML() {
-      const file = document.getElementById('xmlFile').files[0];
-      if (!file) return alert('Vui lòng chọn file XML.');
+<script>
+let fileName = "output";
 
-      fileName = file.name.replace(/\.[^/.]+$/, "");
+async function previewXML() {
+  const fileEl = document.getElementById('xmlFile');
+  if (!fileEl.files[0]) return alert('Vui lòng chọn file XML.');
+  fileName = fileEl.files[0].name.replace(/\.[^/.]+$/, "");
 
-      const text = await file.text();
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(text, "text/xml");
+  const text = await fileEl.files[0].text();
+  const xml = new DOMParser().parseFromString(text, "text/xml");
+  const get = tag => xml.querySelector(tag)?.textContent?.trim() || '';
 
-      const get = (tag) => xml.querySelector(tag)?.textContent || '';
+  // Các trường cần lấy
+  const fields = [
+    {k:'PBan',l:'Phiên bản'}, {k:'MSo',l:'Mẫu số'},
+    {k:'Ten',l:'Tên thông báo'}, {k:'Loai',l:'Loại'},
+    {k:'MCQT',l:'Mã CQT'},     {k:'TCQT',l:'Tên CQT'},
+    {k:'TNNT',l:'Tên NNT'},    {k:'MST',l:'Mã số thuế'},
+    {k:'DDanh',l:'Địa chỉ'},   {k:'NTBao',l:'Ngày thông báo'}
+  ];
+  const invoiceFields = [
+    {k:'STT',l:'STT'}, {k:'MCCQT',l:'Mã CQT'},
+    {k:'KHMSHDon',l:'Ký hiệu mẫu'}, {k:'KHHDon',l:'Ký hiệu HĐ'},
+    {k:'SHDon',l:'Số HĐ'},        {k:'Ngay',l:'Ngày lập'},
+    {k:'LADHDDT',l:'Loại Áp dụng HĐĐT'},  // mới
+    {k:'LDo',l:'Lý do sai sót'}
+  ];
 
-      const parsedData = `
-THÔNG BÁO HÓA ĐƠN CÓ SAI SÓT
--------------------------------
-Phiên bản: ${get('PBan')}
-Mẫu số: ${get('MSo')}
-Tên TB: ${get('Ten')}
-Loại: ${get('Loai')}
-Mã CQT: ${get('MCQT')}
-Tên CQT: ${get('TCQT')}
-Tên NNT: ${get('TNNT')}
-MST: ${get('MST')}
-Địa chỉ: ${get('DDanh')}
-Ngày TB: ${get('NTBao')}
+  // Build phần preview
+  let previewText = "THÔNG BÁO HÓA ĐƠN CÓ SAI SÓT\n-------------------------------\n";
+  let missing = [];
+  fields.forEach(f => {
+    const v = get(f.k);
+    previewText += `${f.l}: ${v}\n`;
+    if (!v) missing.push(f.l);
+  });
+  previewText += "\nDanh sách hóa đơn:\n-------------------------------\n";
+  
+  // Lặp qua tất cả <HDon>
+  xml.querySelectorAll('DSHDon > HDon').forEach((node, idx) => {
+    previewText += `— Hóa đơn ${idx+1} —\n`;
+    invoiceFields.forEach(f => {
+      const val = node.querySelector(f.k)?.textContent.trim() || '';
+      previewText += `${f.l}: ${val}\n`;
+      if (!val) missing.push(f.l);
+    });
+    previewText += "\n";
+  });
 
-Danh sách hóa đơn:
--------------------------------
-STT: ${get('STT')}
-Mã CQT: ${get('MCCQT')}
-Ký hiệu mẫu: ${get('KHMSHDon')}
-Ký hiệu hóa đơn: ${get('KHHDon')}
-Số HĐ: ${get('SHDon')}
-Ngày lập: ${get('Ngay')}
-Lý do sai sót: ${get('LDo')}
-      `.trim();
-
-      document.getElementById("preview").innerHTML = `<div id="previewBox">${parsedData}</div>`;
-      document.getElementById("resultStatus").innerText = "";
-      document.getElementById("previewImage").style.display = "none";
+  // Phát hiện thẻ lạ:
+  const expected = new Set([...fields, ...invoiceFields].map(f=>f.k));
+  const extra = [];
+  xml.querySelectorAll('DLTBao > *, DSHDon > HDon > *').forEach(n => {
+    if (!expected.has(n.tagName)) {
+      extra.push({tag: n.tagName, content: n.textContent.trim()});
     }
+  });
 
-    function captureAsImage() {
-      const previewBox = document.getElementById('previewBox');
-      const resultStatus = document.getElementById('resultStatus');
-      const previewImg = document.getElementById('previewImage');
+  // Hiển thị preview
+  document.getElementById('previewBox').innerText = previewText;
+  document.getElementById('resultStatus').innerText = '';
 
-      if (!previewBox) return alert("Vui lòng xem trước dữ liệu trước khi tải ảnh.");
-
-      resultStatus.style.color = "#333";
-      resultStatus.innerText = "⏳ Đang xử lý ảnh...";
-
-      html2canvas(previewBox).then(canvas => {
-        const imageData = canvas.toDataURL('image/png');
-
-        const link = document.createElement('a');
-        link.download = `${fileName}.png`;
-        link.href = imageData;
-        link.click();
-
-        previewImg.src = imageData;
-        previewImg.style.display = "block";
-
-        resultStatus.style.color = "green";
-        resultStatus.innerText = "✅ Ảnh đã được tạo và tải thành công!";
-      }).catch(err => {
-        resultStatus.style.color = "red";
-        resultStatus.innerText = "❌ Lỗi khi tạo ảnh PNG.";
-        console.error(err);
-      });
+  // Chuẩn bị phân tích
+  let analysis = '';
+  // thiếu trường
+  if (missing.length === 0) {
+    analysis += "✅ Dữ liệu hợp lệ, không thiếu trường nào.\n";
+  } else {
+    analysis += "⚠️ Thiếu dữ liệu ở:\n" + [...new Set(missing)].map(m=>` • ${m}`).join('\n') + "\n";
+  }
+  // thẻ lạ
+  if (extra.length) {
+    analysis += "\n⚠️ Phát hiện thẻ lạ (không chuẩn):\n";
+    // gộp theo tag
+    const map = extra.reduce((m,e) => {
+      if (!m[e.tag]) m[e.tag] = [];
+      m[e.tag].push(e.content);
+      return m;
+    }, {});
+    for (const tag in map) {
+      analysis += ` • <${tag}>: ${map[tag].join(' | ')}\n`;
     }
-  </script>
+  }
+
+  document.getElementById('xmlAnalysis').value = analysis;
+}
+
+function captureAsImage() {
+  const box = document.getElementById('previewBox');
+  if (!box.innerText.trim()) {
+    return alert("Chưa có nội dung để tải ảnh.");
+  }
+  document.getElementById('resultStatus').innerText = "⏳ Đang xử lý ảnh…";
+
+  html2canvas(box, {
+    scrollY: -window.scrollY,
+    backgroundColor: null
+  }).then(canvas => {
+    // đổ nền trắng
+    const ctx = canvas.getContext('2d');
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const data = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.download = `${fileName}.png`;
+    a.href = data;
+    a.click();
+
+    document.getElementById('resultStatus').innerText = "✅ Đã tải ảnh thành công!";
+  }).catch(err => {
+    console.error(err);
+    document.getElementById('resultStatus').innerText = "❌ Lỗi khi tạo ảnh.";
+  });
+}
+</script>
+
 </body>
 </html>
