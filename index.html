@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>XML to PNG Converter</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 40px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+    input[type="file"] {
+      padding: 10px;
+      font-size: 16px;
+      display: block;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 12px 24px;
+      background: #007bff;
+      color: white;
+      border: none;
+      font-size: 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 10px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #previewBox {
+      margin-top: 30px;
+      background: #f9f9f9;
+      border-left: 4px solid #007bff;
+      padding: 20px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    #resultStatus {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    #previewImage {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      display: none;
+      max-width: 100%;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>XML to PNG</h2>
+    <input type="file" id="xmlFile" accept=".xml" />
+    <button onclick="previewXML()">📄 Xem trước</button>
+    <button onclick="captureAsImage()">📷 Tải ảnh PNG</button>
+    <div id="resultStatus"></div>
+    <div id="preview"></div>
+    <img id="previewImage" />
+  </div>
+
+  <script>
+    let fileName = "output";
+
+    async function previewXML() {
+      const file = document.getElementById('xmlFile').files[0];
+      if (!file) return alert('Vui lòng chọn file XML.');
+
+      fileName = file.name.replace(/\.[^/.]+$/, "");
+
+      const text = await file.text();
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(text, "text/xml");
+
+      const get = (tag) => xml.querySelector(tag)?.textContent || '';
+
+      const parsedData = `
+THÔNG BÁO HÓA ĐƠN CÓ SAI SÓT
+-------------------------------
+Phiên bản: ${get('PBan')}
+Mẫu số: ${get('MSo')}
+Tên TB: ${get('Ten')}
+Loại: ${get('Loai')}
+Mã CQT: ${get('MCQT')}
+Tên CQT: ${get('TCQT')}
+Tên NNT: ${get('TNNT')}
+MST: ${get('MST')}
+Địa chỉ: ${get('DDanh')}
+Ngày TB: ${get('NTBao')}
+
+Danh sách hóa đơn:
+-------------------------------
+STT: ${get('STT')}
+Mã CQT: ${get('MCCQT')}
+Ký hiệu mẫu: ${get('KHMSHDon')}
+Ký hiệu hóa đơn: ${get('KHHDon')}
+Số HĐ: ${get('SHDon')}
+Ngày lập: ${get('Ngay')}
+Lý do sai sót: ${get('LDo')}
+      `.trim();
+
+      document.getElementById("preview").innerHTML = `<div id="previewBox">${parsedData}</div>`;
+      document.getElementById("resultStatus").innerText = "";
+      document.getElementById("previewImage").style.display = "none";
+    }
+
+    function captureAsImage() {
+      const previewBox = document.getElementById('previewBox');
+      const resultStatus = document.getElementById('resultStatus');
+      const previewImg = document.getElementById('previewImage');
+
+      if (!previewBox) return alert("Vui lòng xem trước dữ liệu trước khi tải ảnh.");
+
+      resultStatus.style.color = "#333";
+      resultStatus.innerText = "⏳ Đang xử lý ảnh...";
+
+      html2canvas(previewBox).then(canvas => {
+        const imageData = canvas.toDataURL('image/png');
+
+        const link = document.createElement('a');
+        link.download = `${fileName}.png`;
+        link.href = imageData;
+        link.click();
+
+        previewImg.src = imageData;
+        previewImg.style.display = "block";
+
+        resultStatus.style.color = "green";
+        resultStatus.innerText = "✅ Ảnh đã được tạo và tải thành công!";
+      }).catch(err => {
+        resultStatus.style.color = "red";
+        resultStatus.innerText = "❌ Lỗi khi tạo ảnh PNG.";
+        console.error(err);
+      });
+    }
+  </script>
+</body>
+</html>
